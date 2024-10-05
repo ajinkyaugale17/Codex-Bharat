@@ -1,0 +1,36 @@
+from flask import Flask, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
+from flask_restful import Api
+from resources import UserProfileResource
+
+# Initialize the Flask app
+app = Flask(__name__)
+
+# Configure Database (SQLite in this case)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# JWT configuration
+app.config['JWT_SECRET_KEY'] = 'super-secret-key'
+
+# Initialize extensions
+db = SQLAlchemy(app)
+jwt = JWTManager(app)
+api = Api(app)
+
+# Add resource routes (CRUD for user profiles)
+api.add_resource(UserProfileResource, '/user/<int:user_id>', '/user')
+
+# Create all tables
+@app.before_first_request
+def create_tables():
+    db.create_all()
+
+# Error handling
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"message": "Resource not found"}), 404
+
+if __name__ == "__main__":
+    app.run(debug=True)
