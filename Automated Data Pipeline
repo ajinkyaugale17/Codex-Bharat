@@ -1,0 +1,70 @@
+import requests
+import pandas as pd
+from sqlalchemy import create_engine
+import os
+from datetime import datetime
+
+# Configuration (Database URL or CSV file path for output)
+DATABASE_URL = "sqlite:///etl_pipeline.db"  # Example using SQLite
+CSV_FILE_PATH = "transformed_data.csv"
+API_URL = "https://api.example.com/data"  # Replace with actual API URL
+
+# 1. EXTRACT: Function to extract data from an API
+def extract_data(api_url):
+    try:
+        response = requests.get(api_url)
+        response.raise_for_status()  # Check if the request was successful
+        return response.json()  # Assuming the data is in JSON format
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching data from API: {e}")
+        return None
+
+# 2. TRANSFORM: Function to clean and transform the data
+def transform_data(data):
+    # Convert the raw data to a pandas DataFrame
+    df = pd.DataFrame(data)
+    
+    # Example: Renaming columns and filtering rows
+    df = df.rename(columns={"old_col_name": "new_col_name"})  # Example transformation
+    
+    # Example: Remove rows with missing values or outliers
+    df = df.dropna()  # Removing null values
+    
+    # Add new calculated columns (e.g., timestamps or metrics)
+    df['processed_at'] = datetime.now()  # Add timestamp for data processing
+    
+    # Example: Filter data based on specific conditions (if applicable)
+    # df = df[df['some_column'] > threshold_value]
+    
+    return df
+
+# 3. LOAD: Function to load data into a CSV or a database
+def load_data(df, destination):
+    if destination == "csv":
+        df.to_csv(CSV_FILE_PATH, index=False)
+        print(f"Data successfully saved to {CSV_FILE_PATH}")
+    elif destination == "db":
+        engine = create_engine(DATABASE_URL)
+        df.to_sql('processed_data', engine, if_exists='replace', index=False)
+        print(f"Data successfully loaded into database: {DATABASE_URL}")
+    else:
+        print("Invalid destination. Choose 'csv' or 'db'.")
+
+# Main ETL function
+def etl_pipeline(api_url, destination):
+    print("Starting ETL process...")
+    
+    # Step 1: Extract
+    raw_data = extract_data(api_url)
+    if raw_data:
+        # Step 2: Transform
+        transformed_data = transform_data(raw_data)
+        
+        # Step 3: Load
+        load_data(transformed_data, destination)
+    else:
+        print("No data to process.")
+
+if __name__ == "__main__":
+    # Run the ETL pipeline and choose between 'csv' or 'db' as the destination
+    etl_pipeline(API_URL, destination="csv")  # Or destination="db" to load into the database
