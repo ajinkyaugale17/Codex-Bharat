@@ -1,0 +1,54 @@
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+# Function to get the HTML content of the webpage
+def get_html(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Check if the request was successful
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching the URL: {e}")
+        return None
+
+# Function to parse and extract data using BeautifulSoup
+def parse_html(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Example: Extract headlines from a news site (this will vary based on the website's structure)
+    # Customize this part based on the structure of the website you want to scrape.
+    headlines = []
+    for item in soup.select("h2.headline"):  # Example of CSS selector for headlines
+        title = item.get_text(strip=True)
+        headlines.append(title)
+    
+    return headlines
+
+# Function to save the scraped data to a CSV file
+def save_to_csv(data, filename):
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Headline"])  # Example header
+        for row in data:
+            writer.writerow([row])
+    print(f"Data saved to {filename}")
+
+# Main function to scrape data from a webpage
+def scrape_website(url, output_file):
+    html = get_html(url)
+    if html:
+        data = parse_html(html)
+        if data:
+            save_to_csv(data, output_file)
+        else:
+            print("No data found to scrape.")
+    else:
+        print("Failed to retrieve the webpage.")
+
+if __name__ == "__main__":
+    # URL of the website to scrape (example: scraping news headlines)
+    url = "https://example.com/news"  # Replace with the actual URL
+    output_file = "scraped_data.csv"
+    
+    scrape_website(url, output_file)
